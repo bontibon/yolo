@@ -8,7 +8,6 @@ do
     # No current task
     if [ "$?" != "0" ]
     then
-        today=$($YOLO_BIN today)
         entry=$(gxmessage \
             -title "yolo" \
             -wrap \
