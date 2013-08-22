@@ -127,7 +127,7 @@ case "$action" in
         if [ "$?" != "0" -o -z "$current" ]
         then
             echo "no current task"
-            exit 0
+            exit 1
         fi
 
         date=$(echo "$current" | cut -d '|' -f 1 | trim)
