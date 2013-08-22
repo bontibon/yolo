@@ -1,0 +1,256 @@
+#!/bin/sh
+#
+# yolo?
+#
+#   time tracker helper script.
+#   writes to a file with the format:
+#
+#     (<previous task>\n)*
+#     (<current task>|\n)?
+#
+#   That is, the current task is always the last line in the file.  If there is
+#   no current task, the last line of the file is empty.
+#
+#   Previous tasks looks like the following:
+#
+#       <start date> - <end date> | <task>
+#
+#   Dates have the format:  %Y/%m/%d %H:%M:%S
+#
+#   The current task format looks like the following:
+#
+#       <start date> | <task>
+#
+#
+#   The log file that this script trys to use is one of the following, in
+#   order:
+#
+#      1. The file in the environment variable YOLO, or
+#      2. ~/.yolo
+#
+
+ERROR_ABANDON_NO_TASK="no task to abandon"
+ERROR_TEMP_FILE_CREATE="could not create temp file"
+ERROR_TASK_FILE_READ="could not read task file"
+ERROR_TASK_FILE_UPDATE="could not update task file"
+ERROR_TASK_NO_CURRENT="no current task"
+ERROR_TASK_EMPTY="task cannot be empty"
+
+self=$(basename "$0")
+
+usage () {
+    echo "Usage: $self <ACTION> [OPTIONS]..."
+    echo "Helps subdivide your life into blocks."
+    echo
+    echo "Actions:"
+    echo "  current (default action)"
+    echo "    display the current task that you are working on."
+    echo
+    echo "  set <task description>"
+    echo "    set the task you are currently working on."
+    echo
+    echo "  done"
+    echo "    sets the current task as completed."
+    echo
+    echo "  abandon"
+    echo "    forget the current task."
+    echo
+    echo "  today"
+    echo "    list what you have completed today."
+    echo
+    echo "  help"
+    echo "    display this help message."
+}
+
+trim() {
+    sed "s/^ *//;s/ *$//"
+}
+
+now () {
+    date "+%Y/%m/%d %H:%M:%S"
+}
+
+error () {
+    echo "error:" "$@"
+    exit 1
+}
+
+check_error () {
+    if [ "$1" != "0" ]
+    then
+        error "$2"
+    fi
+}
+
+duration_pural () {
+    if [ "$1" = "1" ]
+    then
+        echo "$1 $2"
+    else
+        echo "$1 $2s"
+    fi
+}
+
+duration () {
+    time_now="$2"
+    if [ -z "$time_now" ]
+    then
+        time_now=$(now)
+    fi
+    time_now=$(date -d "$time_now" "+%s")
+    time_test=$(date -d "$1" "+%s")
+
+    time_diff=$(expr "$time_now" - "$time_test")
+    hours=$(expr "$time_diff" / 3600)
+    if [ "$hours" != "0" ]
+    then
+        duration_pural "$hours" "hour"
+        return
+    fi
+    minutes=$(expr "$time_diff" / 60)
+    if [ "$minutes" != "0" ]
+    then
+        duration_pural "$minutes" "minute"
+        return
+    fi
+    duration_pural "$time_diff" "second"
+}
+
+file=${YOLO:-"$HOME/.yolo"}
+action="$1"
+action=${action:-"current"}
+shift
+
+case "$action" in
+    c|cu|cur|curr|curre|curren|current)
+        current=$(tail -n 1 "$file" 2> /dev/null)
+        if [ "$?" != "0" -o -z "$current" ]
+        then
+            echo "no current task"
+            exit 0
+        fi
+
+        date=$(echo "$current" | cut -d '|' -f 1 | trim)
+        ago=$(duration "$date")
+        task=$(echo "$current" | cut -d '|' -f 2- | trim)
+        echo "$task" "(started $ago ago)"
+    ;;
+
+    a|ab|aba|aban|aband|abando|abandon)
+        current=$(tail -n 1 "$file" 2> /dev/null)
+        if [ "$?" != "0" -o -z "$current" ]
+        then
+            error "$ERROR_ABANDON_NO_TASK"
+        fi
+
+        tmp=$(mktemp 2>/dev/null)
+        check_error "$?" "$ERROR_TEMP_FILE_CREATE"
+
+        head -n -1 "$file" > "$tmp" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_READ"
+
+        echo | cat "$tmp" - > "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
+
+        echo "task abandoned!"
+    ;;
+
+    s|se|set)
+        task="$@"
+        if [ -z "$task" ]
+        then
+            echo -n "task: "
+            read task
+        fi
+        task=$(echo "$task" | tr "\n" " " | trim)
+        if [ -z "$task" ]
+        then
+            error "$ERROR_TASK_EMPTY"
+        fi
+        task=$(now)" | $task"
+
+        tmp=$(mktemp 2>/dev/null)
+        check_error "$?" "$ERROR_TEMP_FILE_CREATE 1"
+
+        if [ -f "$file" ]
+        then
+            head -n -1 "$file" > "$tmp" 2> /dev/null
+            check_error "$?" "$ERROR_TASK_FILE_UPDATE 2"
+
+            mv "$tmp" "$file" 2> /dev/null
+            check_error "$?" "$ERROR_TASK_FILE_UPDATE 3"
+        fi
+
+        echo "$task" | tee -a "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE 4"
+    ;;
+
+    d|do|don|done)
+        current=$(tail -n 1 "$file" 2> /dev/null)
+        if [ "$?" != "0" -o -z "$current" ]
+        then
+            error "$ERROR_TASK_NO_CURRENT"
+        fi
+
+        tmp=$(mktemp 2>/dev/null)
+        check_error "$?" "$ERROR_TEMP_FILE_CREATE"
+
+        head -n -1 "$file" > "$tmp" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_READ"
+
+        mv "$tmp" "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
+
+        date=$(echo "$current" | cut -d '|' -f 1 | trim)
+        date_now=$(now)
+        task=$(echo "$current" | cut -d '|' -f 2- | trim)
+
+        echo "$date - $date_now | $task" >> "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
+
+        echo >> "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
+
+        echo "task completed!"
+    ;;
+
+    t|to|tod|toda|today)
+        today=$(date "+%Y/%m/%d")
+        state="0"
+        tac "$file" 2> /dev/null | while read line
+        do
+            if [ "$state" = "0" ]
+            then
+                state="1"
+                continue
+            fi
+            # TODO:  format nice
+            line=$(echo "$line" | grep "^$today" 2> /dev/null)
+            if [ "$?" != "0" ]
+            then
+                if [ "$state" != "2" ]
+                then
+                    echo "no tasks completed today"
+                fi
+                break
+            fi
+            task=$(echo "$line" | cut -d '|' -f 2- | trim)
+            date=$(echo "$line" | cut -d '|' -f 1 | trim)
+            date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
+            date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
+            task_duration=$(duration "$date_start" "$date_end")
+            echo $task "(completed in $task_duration)"
+            state="2"
+        done
+    ;;
+
+    h|he|hel|help)
+        usage
+    ;;
+
+    (*)
+        echo "error: unknown action"
+        echo "run '$self help' to view actions"
+        exit 1
+    ;;
+esac
