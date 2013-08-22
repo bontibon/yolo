@@ -8,69 +8,37 @@ do
     # No current task
     if [ "$?" != "0" ]
     then
-        entry=$(gxmessage \
-            -title "yolo" \
-            -wrap \
-            -entry \
-            -buttons "GTK_STOCK_QUIT:100,40min:101,25min:102,15min:103,10min:104" \
-            "New task to be completed in...")
-        case "$?" in
-            100)
-                exit
-            ;;
-            101)
-                time="40"
-            ;;
-            102)
-                time="25"
-            ;;
-            103)
-                time="15"
-            ;;
-            104)
-                time="10"
-            ;;
-        esac
-        now=$(date "+%s")
-        seconds=$(expr "$time" "*" 60)
-        future=$(expr "$seconds" + "$now")
-
-        $YOLO_BIN set "$entry"
-
-        gxmessage \
-            -title "yolo" \
-            -wrap \
-            -buttons "GTK_STOCK_QUIT:100,Hide:101,Continue:102" \
-            -timeout "$seconds" \
-            "Get working for $time minutes!"
-        case "$?" in
-            100)
-                exit
-            ;;
-            101)
-                now=$(date "+%s")
-                remainder=$(expr "$future" - "$now")
-                sleep "$remainder" 2> /dev/null
-            ;;
-        esac
-    # 
+        task=$(zenity \
+            --entry \
+            --title="yolo" \
+            --text="Enter a task to complete" 2> /dev/null)
+        if [ "$?" != "0" ]
+        then
+            exit
+        fi
+        $YOLO_BIN set "$task"
+        exit
     else
-        gxmessage \
-            -title "yolo" \
-            -wrap \
-            -buttons "GTK_STOCK_QUIT:100,Abandon task:101,Task done:102" \
-            "$current"
-        case "$?" in
-            100)
-                exit
-            ;;
-            101)
-                $YOLO_BIN abandon
-            ;;
-            102)
+        selection=$(echo -e "\nDone\n\nAbandon" |
+            zenity \
+                --list \
+                --title="yolo" \
+                --radiolist \
+                --column="" \
+                --column="Action" \
+                --print-column=2 \
+                --text="$current" 2> /dev/null)
+        if [ "$?" != "0" ]
+        then
+            exit
+        fi
+        case "$selection" in
+            "Done")
                 $YOLO_BIN done
+            ;;
+            "Abandon")
+                $YOLO_BIN abandon
             ;;
         esac
     fi
 done
-
