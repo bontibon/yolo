@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (c) 2013 Tim Cooper
+# See LICENSE
+#
 
 YOLO_BIN="yolo"
 
