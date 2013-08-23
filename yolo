@@ -252,7 +252,7 @@ case "$action" in
         usage
     ;;
 
-    (*)
+    *)
         echo "error: unknown action"
         echo "run '$self help' to view actions"
         exit 1
