@@ -1,6 +1,6 @@
 # yolo
 
-time tracker script to help you track time
+time tracker script to help track time
 
 ## Usage
 
