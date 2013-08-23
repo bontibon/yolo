@@ -152,7 +152,8 @@ case "$action" in
         echo | cat "$tmp" - > "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
-        echo "task abandoned!"
+        task=$(echo "$current" | cut -d '|' -f 2- | trim)
+        echo "$task (abandoned)"
     ;;
 
     s|se|set)
@@ -211,7 +212,8 @@ case "$action" in
         echo >> "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
-        echo "task completed!"
+        task_duration=$(duration "$date" "$date_now")
+        echo "$task (completed in $task_duration)"
     ;;
 
     t|to|tod|toda|today)

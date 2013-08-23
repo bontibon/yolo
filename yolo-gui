@@ -16,8 +16,11 @@ do
         then
             exit
         fi
-        $YOLO_BIN set "$task"
-        exit
+        $YOLO_BIN set "$task" < /dev/null
+        if [ "$?" = "0" ]
+        then
+            exit
+        fi
     else
         selection=$(echo -e "\nDone\n\nAbandon" |
             zenity \
