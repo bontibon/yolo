@@ -144,10 +144,7 @@ case "$action" in
             error "$ERROR_ABANDON_NO_TASK"
         fi
 
-        sed -in '$d' "$file" 2> /dev/null
-        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
-
-        echo >> "$file" 2> /dev/null
+        sed -i '$s/.*//' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
