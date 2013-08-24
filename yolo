@@ -32,7 +32,6 @@
 #
 
 ERROR_ABANDON_NO_TASK="no task to abandon"
-ERROR_TEMP_FILE_CREATE="could not create temp file"
 ERROR_TASK_FILE_READ="could not read task file"
 ERROR_TASK_FILE_UPDATE="could not update task file"
 ERROR_TASK_NO_CURRENT="no current task"
@@ -145,13 +144,10 @@ case "$action" in
             error "$ERROR_ABANDON_NO_TASK"
         fi
 
-        tmp=$(mktemp 2>/dev/null)
-        check_error "$?" "$ERROR_TEMP_FILE_CREATE"
+        sed -in '$d' "$file" 2> /dev/null
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
-        head -n -1 "$file" > "$tmp" 2> /dev/null
-        check_error "$?" "$ERROR_TASK_FILE_READ"
-
-        echo | cat "$tmp" - > "$file" 2> /dev/null
+        echo >> "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
@@ -172,16 +168,10 @@ case "$action" in
         fi
         task=$(now)" | $task"
 
-        tmp=$(mktemp 2>/dev/null)
-        check_error "$?" "$ERROR_TEMP_FILE_CREATE 1"
-
         if [ -f "$file" ]
         then
-            head -n -1 "$file" > "$tmp" 2> /dev/null
-            check_error "$?" "$ERROR_TASK_FILE_UPDATE 2"
-
-            mv "$tmp" "$file" 2> /dev/null
-            check_error "$?" "$ERROR_TASK_FILE_UPDATE 3"
+            sed -in '$d' "$file" 2> /dev/null
+            check_error "$?" "$ERROR_TASK_FILE_UPDATE"
         fi
 
         echo "$task" | tee -a "$file" 2> /dev/null
@@ -195,23 +185,14 @@ case "$action" in
             error "$ERROR_TASK_NO_CURRENT"
         fi
 
-        tmp=$(mktemp 2>/dev/null)
-        check_error "$?" "$ERROR_TEMP_FILE_CREATE"
-
-        head -n -1 "$file" > "$tmp" 2> /dev/null
-        check_error "$?" "$ERROR_TASK_FILE_READ"
-
-        mv "$tmp" "$file" 2> /dev/null
+        sed -in '$d' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         date=$(echo "$current" | cut -d '|' -f 1 | trim)
         date_now=$(now)
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
 
-        echo "$date - $date_now | $task" >> "$file" 2> /dev/null
-        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
-
-        echo >> "$file" 2> /dev/null
+        (echo "$date - $date_now | $task" ; echo) >> "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         task_duration=$(duration "$date" "$date_now")
@@ -228,7 +209,6 @@ case "$action" in
                 state="1"
                 continue
             fi
-            # TODO:  format nice
             line=$(echo "$line" | grep "^$today" 2> /dev/null)
             if [ "$?" != "0" ]
             then
