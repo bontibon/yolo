@@ -198,31 +198,34 @@ case "$action" in
 
     t|to|tod|toda|today)
         today=$(date "+%Y/%m/%d")
-        state="0"
-        tac "$file" 2> /dev/null | while read line
-        do
-            if [ "$state" = "0" ]
-            then
-                state="1"
-                continue
-            fi
-            line=$(echo "$line" | grep "^$today" 2> /dev/null)
-            if [ "$?" != "0" ]
-            then
-                if [ "$state" != "2" ]
+        tac "$file" 2> /dev/null | (
+            state="0"
+            while read line
+            do
+                if [ "$state" = "0" ]
                 then
-                    echo "no tasks completed today"
+                    state="1"
+                    continue
                 fi
-                break
-            fi
-            task=$(echo "$line" | cut -d '|' -f 2- | trim)
-            date=$(echo "$line" | cut -d '|' -f 1 | trim)
-            date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
-            date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
-            task_duration=$(duration "$date_start" "$date_end")
-            echo $task "(completed in $task_duration)"
-            state="2"
-        done
+                line=$(echo "$line" | grep "^$today" 2> /dev/null)
+                if [ "$?" != "0" ]
+                then
+                    break
+                fi
+                task=$(echo "$line" | cut -d '|' -f 2- | trim)
+                date=$(echo "$line" | cut -d '|' -f 1 | trim)
+                date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
+                date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
+                task_duration=$(duration "$date_start" "$date_end")
+                echo $task "(completed in $task_duration)"
+                state="2"
+            done
+            exit $state
+        )
+        if [ "$?" != "2" ]
+        then
+            echo "no tasks completed today"
+        fi
     ;;
 
     h|he|hel|help)
