@@ -225,6 +225,7 @@ case "$action" in
         if [ "$?" != "2" ]
         then
             echo "no tasks completed today"
+            exit 1
         fi
     ;;
 
