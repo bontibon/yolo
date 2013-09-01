@@ -167,12 +167,12 @@ case "$action" in
 
         if [ -f "$file" ]
         then
-            sed -in '$d' "$file" 2> /dev/null
+            sed -ni '$d' "$file" 2> /dev/null
             check_error "$?" "$ERROR_TASK_FILE_UPDATE"
         fi
 
         echo "$task" | tee -a "$file" 2> /dev/null
-        check_error "$?" "$ERROR_TASK_FILE_UPDATE 4"
+        check_error "$?" "$ERROR_TASK_FILE_UPDATE"
     ;;
 
     d|do|don|done)
@@ -182,7 +182,7 @@ case "$action" in
             error "$ERROR_TASK_NO_CURRENT"
         fi
 
-        sed -in '$d' "$file" 2> /dev/null
+        sed -ni '$d' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         date=$(echo "$current" | cut -d '|' -f 1 | trim)
