@@ -38,6 +38,11 @@ To review what you accomplished today, run `yolo today`.
     Catch up on show (completed in 58 minutes)
     Listen to that song I like (completed in 4 minutes)
 
+Passing `--bare` to any command (except set) will not show any annotations along with the task (e.g. the "ago" time).
+
+    $ yolo current --bare
+    Do 20 push-ups
+
 ## Log file
 
 The log file yolo writes to is either:

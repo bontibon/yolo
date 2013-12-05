@@ -130,11 +130,15 @@ case "$action" in
             echo "no current task"
             exit 1
         fi
-
-        date=$(echo "$current" | cut -d '|' -f 1 | trim)
-        ago=$(duration "$date")
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
-        echo "$task" "(started $ago ago)"
+        if [ "$1" = "--bare" ]
+        then
+           echo "$task"
+        else
+            date=$(echo "$current" | cut -d '|' -f 1 | trim)
+            ago=$(duration "$date")
+            echo "$task" "(started $ago ago)"
+       fi
     ;;
 
     a|ab|aba|aban|aband|abando|abandon)
@@ -148,7 +152,12 @@ case "$action" in
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
-        echo "$task (abandoned)"
+        if [ "$1" = "--bare" ]
+        then
+            echo "$task"
+        else
+            echo "$task (abandoned)"
+        fi
     ;;
 
     s|se|set)
@@ -192,8 +201,13 @@ case "$action" in
         (echo "$date - $date_now | $task" ; echo) >> "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
-        task_duration=$(duration "$date" "$date_now")
-        echo "$task (completed in $task_duration)"
+        if [ "$1" = "--bare" ]
+        then
+            echo "$task"
+        else
+            task_duration=$(duration "$date" "$date_now")
+            echo "$task (completed in $task_duration)"
+        fi
     ;;
 
     t|to|tod|toda|today)
@@ -213,11 +227,16 @@ case "$action" in
                     break
                 fi
                 task=$(echo "$line" | cut -d '|' -f 2- | trim)
-                date=$(echo "$line" | cut -d '|' -f 1 | trim)
-                date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
-                date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
-                task_duration=$(duration "$date_start" "$date_end")
-                echo $task "(completed in $task_duration)"
+                if [ "$1" = "--bare" ]
+                then
+                    echo "$task"
+                else
+                    date=$(echo "$line" | cut -d '|' -f 1 | trim)
+                    date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
+                    date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
+                    task_duration=$(duration "$date_start" "$date_end")
+                    echo "$task (completed in $task_duration)"
+                fi
                 state="2"
             done
             exit $state
