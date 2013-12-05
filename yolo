@@ -164,8 +164,7 @@ case "$action" in
         task="$@"
         if [ -z "$task" ]
         then
-            echo -n "task: "
-            read task
+            read -e -p "task: " task
         fi
         task=$(echo "$task" | tr "\n" " " | trim)
         if [ -z "$task" ]
