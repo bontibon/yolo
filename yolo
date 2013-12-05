@@ -148,7 +148,7 @@ case "$action" in
             error "$ERROR_ABANDON_NO_TASK"
         fi
 
-        sed -i '$s/.*//' "$file" 2> /dev/null
+        sed -i '$d' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
@@ -174,12 +174,6 @@ case "$action" in
         fi
         task=$(now)" | $task"
 
-        if [ -f "$file" ]
-        then
-            sed -ni '$d' "$file" 2> /dev/null
-            check_error "$?" "$ERROR_TASK_FILE_UPDATE"
-        fi
-
         echo "$task" | tee -a "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
     ;;
@@ -191,14 +185,14 @@ case "$action" in
             error "$ERROR_TASK_NO_CURRENT"
         fi
 
-        sed -ni '$d' "$file" 2> /dev/null
+        sed -i '$d' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         date=$(echo "$current" | cut -d '|' -f 1 | trim)
         date_now=$(now)
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
 
-        (echo "$date - $date_now | $task" ; echo) >> "$file" 2> /dev/null
+        echo "$date - $date_now | $task" >> "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
 
         if [ "$1" = "--bare" ]
@@ -216,9 +210,8 @@ case "$action" in
             state="0"
             while read line
             do
-                if [ "$state" = "0" ]
+                if [ "$line" = "" ]
                 then
-                    state="1"
                     continue
                 fi
                 line=$(echo "$line" | grep "^$today" 2> /dev/null)
