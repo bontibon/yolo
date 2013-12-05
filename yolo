@@ -130,12 +130,19 @@ case "$action" in
             echo "no current task"
             exit 1
         fi
+        date=$(echo "$current" | cut -d '|' -f 1 | trim)
+        echo "$date" | grep '-' 2> /dev/null > /dev/null
+        if [ "$?" = "0" ]
+        then
+            echo "no current task"
+            exit 1
+        fi
         task=$(echo "$current" | cut -d '|' -f 2- | trim)
+        
         if [ "$1" = "--bare" ]
         then
            echo "$task"
         else
-            date=$(echo "$current" | cut -d '|' -f 1 | trim)
             ago=$(duration "$date")
             echo "$task" "(started $ago ago)"
        fi
@@ -144,6 +151,12 @@ case "$action" in
     a|ab|aba|aban|aband|abando|abandon)
         current=$(tail -n 1 "$file" 2> /dev/null)
         if [ "$?" != "0" -o -z "$current" ]
+        then
+            error "$ERROR_ABANDON_NO_TASK"
+        fi
+        date=$(echo "$current" | cut -d '|' -f 1 | trim)
+        echo "$date" | grep '-' 2> /dev/null > /dev/null
+        if [ "$?" = "0" ]
         then
             error "$ERROR_ABANDON_NO_TASK"
         fi
@@ -183,6 +196,12 @@ case "$action" in
         then
             error "$ERROR_TASK_NO_CURRENT"
         fi
+        date=$(echo "$current" | cut -d '|' -f 1 | trim)
+        echo "$date" | grep '-' 2> /dev/null > /dev/null
+        if [ "$?" = "0" ]
+        then
+            error "$ERROR_TASK_NO_CURRENT"
+        fi
 
         sed -i '$d' "$file" 2> /dev/null
         check_error "$?" "$ERROR_TASK_FILE_UPDATE"
@@ -219,11 +238,16 @@ case "$action" in
                     break
                 fi
                 task=$(echo "$line" | cut -d '|' -f 2- | trim)
+                date=$(echo "$line" | cut -d '|' -f 1 | trim)
+                echo "$date" | grep '-' 2> /dev/null > /dev/null
+                if [ "$?" != "0" ]
+                then
+                    continue
+                fi
                 if [ "$1" = "--bare" ]
                 then
                     echo "$task"
                 else
-                    date=$(echo "$line" | cut -d '|' -f 1 | trim)
                     date_start=$(echo "$date" | cut -d '-' -f 1 | trim)
                     date_end=$(echo "$date" | cut -d '-' -f 2 | trim)
                     task_duration=$(duration "$date_start" "$date_end")
