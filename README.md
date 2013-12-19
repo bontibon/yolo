@@ -38,6 +38,14 @@ To review what you accomplished today, run `yolo today`.
     Catch up on show (completed in 58 minutes)
     Listen to that song I like (completed in 4 minutes)
 
+To review what you accomplished on a certain date, run `yolo on <time specification>`.
+The time specification can be anywhere from a formatted date to english words as it uses `date -d`.
+
+	$ yolo on yesterday
+	Completed tasks for 2013/12/18:
+	Finish assignment (completed in 34 minutes)
+	Catch up on show (completed in 58 minutes)
+
 Passing `--bare` to any command (except set) will not show any annotations along with the task (e.g. the "ago" time).
 
     $ yolo current --bare
