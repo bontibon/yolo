@@ -36,6 +36,7 @@ ERROR_TASK_FILE_READ="could not read task file"
 ERROR_TASK_FILE_UPDATE="could not update task file"
 ERROR_TASK_NO_CURRENT="no current task"
 ERROR_TASK_EMPTY="task cannot be empty"
+ERROR_DATE_NOT_RECOGNISED="could not recognise date, please try again"
 
 self=$(basename "$0")
 
@@ -231,7 +232,8 @@ case "$action" in
     o|on)
 		datespec=$1
 		shift
-        day=$(date "+%Y/%m/%d" -d "$datespec")
+        day=$(date "+%Y/%m/%d" -d "$datespec" 2>/dev/null)
+		check_error "$?" "$ERROR_DATE_NOT_RECOGNISED"
 		echo "Completed tasks for $day:"
 		echo
         tac "$file" 2> /dev/null | (
